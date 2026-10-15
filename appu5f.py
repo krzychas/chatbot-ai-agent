@@ -901,5 +901,8 @@ def reset(
         username,
         []
     )
+    
+    if username in uploaded_dokuments:
+        del uploaded_dokuments[username]
 
     return "OK"
