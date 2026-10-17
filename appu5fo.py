@@ -222,7 +222,7 @@ def current_user(request: Request):
 # ====================================================
 
 login_html = """
-<h3>MW - Logowanie do Agenta AI</h3>
+<h3>MW - Logowanie do Chatbota RAG</h3>
 
 <form method="post" action="/login">
 
@@ -256,7 +256,7 @@ Zaloguj
 # ====================================================
 
 chat_html = """
-<h3>MW - Agent AI korzystający z bazy wiedzy (RAG)</h3>
+<h3>MW - Chatbot RAG korzystający z bazy wiedzy</h3>
 
 <button onclick="logout()">
 Wyloguj
