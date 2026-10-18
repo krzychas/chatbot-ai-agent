@@ -21,14 +21,14 @@ rag_client = chromadb.PersistentClient(
 
 # usuń starą kolekcję
 try:
-    rag_client.delete_collection("baza-wiedzy")
+    rag_client.delete_collection("baza-wiedzy-cosine")
     print("Usunięto starą kolekcję.")
 except Exception:
     print("Kolekcja nie istniała.")
 
 # utwórz nową
 collection = rag_client.get_or_create_collection(
-    name="baza-wiedzy"
+    name="baza-wiedzy-cosine"
 )
 
 print("Utworzono nową kolekcję.")
@@ -45,6 +45,7 @@ def get_embedding(text):
 
     return response.data[0].embedding
 
+
 # =====================================
 # Dzielenie tekstu na fragmenty
 # =====================================
@@ -59,6 +60,7 @@ def chunk_text(text, chunk_size=1000):
         )
 
     return chunks
+
 
 # =====================================
 # Indeksowanie katalogu
@@ -115,3 +117,4 @@ for filename in os.listdir(DOCUMENTS_DIR):
 
 print()
 print(f"Zapisano {counter} fragmentów.")
+
