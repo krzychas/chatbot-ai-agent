@@ -45,7 +45,6 @@ def get_embedding(text):
 
     return response.data[0].embedding
 
-
 # =====================================
 # Dzielenie tekstu na fragmenty
 # =====================================
@@ -115,7 +114,7 @@ for filename in os.listdir(DOCUMENTS_DIR):
                 }
             ]
         )
-
+        
         counter += 1
 
 print()
