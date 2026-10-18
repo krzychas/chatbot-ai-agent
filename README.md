@@ -1,2 +1,2 @@
 # chatbot-ai-agent
-AI agent using the Bielik model installed locally
+Chatbot RAG using the Bielik model installed locally
