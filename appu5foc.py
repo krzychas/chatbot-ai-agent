@@ -72,9 +72,13 @@ rag_client = chromadb.PersistentClient(
     path="./chroma_db"
 )
 
+# Dodajemy parametr metadata, wymuszając miarę kosinusową
 collection = rag_client.get_or_create_collection(
-    name="baza-wiedzy"
+    name="baza-wiedzy-cosine",
+    metadata={"hnsw:space": "cosine"}
 )
+
+print("METADANE KOLEKCJI:", collection.metadata)
 
 # ====================================================
 # Katalog historii
@@ -136,27 +140,33 @@ def get_embedding(text):
 # ====================================================
 
 def search_context(question, k=3):
-
     embedding = get_embedding(question)
-
     results = collection.query(
         query_embeddings=[embedding],
         n_results=k
     )
 
-    if not results["documents"]:
+    # Bezpiecznik: jeśli baza jest pusta, zwróć pusty ciąg
+    if not results or not results["documents"] or not results["documents"][0]:
         return ""
 
-    distance = results["distances"][0][0]
+    valid_documents = []
 
-    print("DISTANCE:", distance)
+    THRESHOLD = 1.15
 
-    if distance > 0.8:
+    # Iterujemy po dokumentach i ich indywidualnych odległościach
+    for doc, dist in zip(results["documents"][0], results["distances"][0]):
+        print(f"DOKUMENT: {doc[:30]}... | DISTANCE: {dist}")
+
+        # Dla modelu BGE-M3 odległość kosinusowa powyżej 0.7-0.8 zazwyczaj oznacza brak korelacji
+        if dist <= THRESHOLD:
+            valid_documents.append(doc)
+
+    # Jeśli żaden dokument nie spełnił kryterium, zwracamy pusty ciąg (aktywuje fallback do wiedzy ogólnej)
+    if not valid_documents:
         return ""
 
-    return "\n\n".join(
-        results["documents"][0]
-    )
+    return "\n\n".join(valid_documents)
 
 # ====================================================
 # Historia użytkownika
@@ -785,41 +795,36 @@ def chat(
 
     context = search_context(q)
 
-    messages = [
+    # Dynamiczny System Prompt (Zapobiega uwięzieniu w kontekście)
 
+        # Sprawdzamy, czy RAG lub załadowany plik dostarczyły jakichkolwiek danych
+    if context or file_context:
+        system_content = """Jesteś pomocnym asystentem, korzystającym z bazy wiedzy.
+    Jeżeli w sekcji KONTEKST lub ZAŁADOWANY PLIK znajdują się informacje potrzebne do odpowiedzi,
+    wykorzystaj te informacje.
+    
+    Jeżeli pytanie dotyczy osoby, miejsca, wydarzenia lub zagadnienia,
+    którego nie ma w KONTEKŚCIE lub ZAŁADOWANYM PLIKU,
+    całkowicie zignoruj KONTEKST/ZAŁADOWANY PLIK.
+    W takiej sytuacji odpowiedz wyłącznie na podstawie własnej wiedzy.
+    
+        Odpowiadaj naturalnie po polsku."""
+
+    else:
+        # Całkowity brak kontekstu – model odpowiada wyłącznie ze swojej wiedzy
+        system_content = """Jesteś pomocnym asystentem.
+        
+    Odpowiedz na pytanie na podstawie własnej wiedzy.
+
+    Nie twórz fikcyjnych procedur, regulacji ani instrukcji.
+
+        Odpowiadaj naturalnie po polsku."""
+
+    messages = [
         {
             "role": "system",
-            "content": """
-Jesteś pomocnym asystentem, korzystającym z bazy wiedzy.
-
-Jeżeli w sekcji KONTEKST znajdują się informacje potrzebne do odpowiedzi,
-wykorzystaj informacje z KONTEKSTU.
-
-Sekcja ZAŁADOWANY PLIK może zawierać:
-- treść dokumentu,
-- pytania użytkownika,
-- dodatkowe informacje do analizy.
-
-Wykorzystuj informacje z KONTEKSTU, ZAŁADOWANEGO PLIKU lub z obu źródeł,
-w zależności od treści pytania.
-
-Jeżeli odpowiedź znajduje się w KONTEKŚCIE lub ZAŁADOWANYM PLIKU,
-udziel odpowiedzi na podstawie dostępnych informacji.
-
-Jeżeli odpowiedzi nie ma ani w KONTEKŚCIE ani w ZAŁADOWANYM PLIKU,
-odpowiedz korzystając z własnej wiedzy.
-
-Nie informuj użytkownika, skąd pochodzi odpowiedź.
-
-Nie twórz fikcyjnych procedur, regulacji, instrukcji ani dokumentów.
-
-Jeżeli nie istnieją informacje pozwalające odpowiedzieć,
-powiedz o tym wprost.
-
-Odpowiadaj naturalnie po polsku.
-"""
+            "content": system_content
         }
-
     ]
 
     messages.extend(conversation[-10:])
