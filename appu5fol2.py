@@ -72,8 +72,9 @@ rag_client = chromadb.PersistentClient(
     path="./chroma_db"
 )
 
+# Jako miarę stosujemy odległość euklidesową (L2)
 collection = rag_client.get_or_create_collection(
-    name="baza-wiedzy"
+    name="baza-wiedzy-l2"
 )
 
 print("METADANE KOLEKCJI:", collection.metadata)
@@ -148,23 +149,41 @@ def search_context(question, k=3):
     if not results or not results["documents"] or not results["documents"][0]:
         return ""
 
-    valid_documents = []
+    THRESHOLD = 1.22
 
-    THRESHOLD = 1.36
+    matches = []
 
     # Iterujemy po dokumentach i ich indywidualnych odległościach
-    for doc, dist in zip(results["documents"][0], results["distances"][0]):
-        print(f"DOKUMENT: {doc[:30]}... | DISTANCE: {dist}")
+    for doc, dist, meta in zip(
+            results["documents"][0],
+            results["distances"][0],
+            results["metadatas"][0]
+    ):
+        print(
+            f"PLIK: {meta['source']} | DISTANCE: {dist} | DOKUMENT: {doc[:30]}..."
+        )
 
         # Dla modelu BGE-M3 odległość euklidesowa (L2) może swobodnie przekraczać 1.0
         if dist <= THRESHOLD:
-            valid_documents.append(doc)
+            matches.append(
+                (dist,doc)
+            )
 
     # Jeśli żaden dokument nie spełnił kryterium, zwracamy pusty ciąg (aktywuje fallback do wiedzy ogólnej)
-    if not valid_documents:
+    if not matches:
         return ""
 
-    return "\n\n".join(valid_documents)
+    # Jeżeli kryterium spełnione do modelu trafią 2 najlepsze chunki
+    matches.sort(
+        key=lambda x: x[0]
+    )
+
+    best_docs = [
+        doc
+        for dist, doc in matches[:2]
+    ]
+    
+    return "\n\n".join(best_docs)
 
 # ====================================================
 # Historia użytkownika
@@ -801,9 +820,9 @@ def chat(
     Jeżeli w sekcji KONTEKST lub ZAŁADOWANY PLIK znajdują się informacje potrzebne do odpowiedzi,
     wykorzystaj te informacje.
     
-    Jeżeli pytanie dotyczy osoby, miejsca, wydarzenia lub zagadnienia,
-    którego nie ma w KONTEKŚCIE lub ZAŁADOWANYM PLIKU,
-    całkowicie zignoruj KONTEKST/ZAŁADOWANY PLIK.
+    JEŻELI JEDNAK pytanie dotyczy zupełnie czegoś innego (np. powszechnie znanej postaci historycznej,
+    z polityki czy popkultury, miejsca lub wydarzenia), a KONTEKST lub ZAŁADOWANY PLIK
+    sa całkowicie nie związane z tematem pytania bezwzględnie zignoruj KONTEKST/ZAŁADOWANY PLIK.
     W takiej sytuacji odpowiedz wyłącznie na podstawie własnej wiedzy.
     
         Odpowiadaj naturalnie po polsku."""
