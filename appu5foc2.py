@@ -150,7 +150,7 @@ def search_context(question, k=3):
     if not results or not results["documents"] or not results["documents"][0]:
         return ""
 
-    THRESHOLD = 1.18
+    THRESHOLD = 0.61
 
     matches = []
 
