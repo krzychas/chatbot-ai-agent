@@ -26,9 +26,10 @@ try:
 except Exception:
     print("Kolekcja nie istniała.")
 
-# utwórz nową
+# utwórz nową kolekcję z miarą kosinusową
 collection = rag_client.get_or_create_collection(
     name="baza-wiedzy-cosine"
+    metadata={"hnsw:space": "cosine"}
 )
 
 print("Utworzono nową kolekcję.")
