@@ -26,7 +26,7 @@ try:
 except Exception:
     print("Kolekcja nie istniała.")
 
-# utwórz nową
+# utwórz nową kolekcję z miarą domyslną euklidesową (L2)
 collection = rag_client.get_or_create_collection(
     name="baza-wiedzy"
 )
