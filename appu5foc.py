@@ -320,7 +320,7 @@ Reset
 📎 Dodaj plik
 </label>
 
-<p>UWAGA: Można wczytać plik: .txt .pdf .docx .elm; </p>
+<p>UWAGA: Można wczytać plik: .txt .pdf .docx .eml; </p>
 
 <input
     type="file"
