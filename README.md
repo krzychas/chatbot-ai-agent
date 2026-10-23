@@ -8,4 +8,4 @@ u - with access for multiple users,
 f - option to add a file to a conversation,
 o - OCR,
 l2 - squared L2 vector comparison method,
-d - downloading conversation history.
+d - downloading of conversation history by the user.
