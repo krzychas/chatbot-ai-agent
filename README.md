@@ -7,4 +7,4 @@ u - with access for multiple users,
 f - option to add a file to a conversation,
 o - OCR,
 c - cosine vector comparison method,
-d - downloading conversation history.
+d - downloading of conversation history by the user.
